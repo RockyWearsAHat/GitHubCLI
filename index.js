@@ -491,7 +491,16 @@ if (userCanUseCLI) {
       console.log("pull!");
       break;
     case startMenuInput.action.toLowerCase().indexOf("push") == 0:
-      console.log("push!");
+      const currentBranch = await getCurrentBranch();
+      await addLocalChanges();
+      let commitMsg = await inquirer.prompt({
+        type: "input",
+        name: "msg",
+        message: "What Would You Like To Set As The Commit Message?",
+      });
+      await commitLocalChanges(commitMsg.msg);
+      const res = await gitPush(currentBranch);
+      console.log(res.stdout);
       break;
     case startMenuInput.action.toLowerCase().indexOf("branch") == 0:
       let validBranchActionFlag = false;
@@ -536,7 +545,6 @@ if (userCanUseCLI) {
       }
       switch (actionSelection) {
         case "Push To Branch":
-          console.log(selectedBranch);
           await addLocalChanges();
           let commitMsg = await inquirer.prompt({
             type: "input",
