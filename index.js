@@ -20,7 +20,6 @@ const executeShellCommand = async (command = "", verifyUserCommand = false) => {
       // console.error(e);
       return null;
     }
-    //Testing comment
 
     /*IF THIS COMMAND IS A VERIFY COMMAND, ERROR WILL BE THROWN BUT IS EXPECTED */
     let res;
