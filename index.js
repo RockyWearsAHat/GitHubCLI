@@ -343,7 +343,8 @@ const getBranchAction = async (selectedBranch) => {
       message: `Select Action For ${selectedBranch}`,
       choices: [
         "Push To Branch",
-        "Pull From Branch",
+        "Pull Latest In Repo",
+        "Checkout",
         "Delete Branch",
         "<= BACK",
       ],
@@ -379,6 +380,11 @@ const gitRemoteBranchDelete = async (branchName) => {
   const res = await executeShellCommand(
     `git push origin --delete ${branchName}`
   );
+  return res;
+};
+
+const gitCheckout = async (branchName) => {
+  const res = await executeShellCommand(`git checkout ${branchName}`);
   return res;
 };
 
@@ -555,8 +561,11 @@ if (userCanUseCLI) {
           const res = await gitPush(selectedBranch);
           console.log(res.stdout);
           break;
-        case "Pull From Branch":
+        case "Pull Latest In Repo":
           await gitPull(selectedBranch);
+          break;
+        case "Checkout":
+          await gitCheckout(selectedBranch);
           break;
         case "Delete Branch":
           let fullDeletion = await inquirer.prompt({
