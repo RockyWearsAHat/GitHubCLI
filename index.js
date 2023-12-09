@@ -521,6 +521,8 @@ if (userCanUseCLI) {
         }
       }
 
+      //This is a test comment
+
       if (selectedBranch.toLowerCase() == "[+ new]") {
         const newBranchInput = await inquirer.prompt({
           type: "input",
