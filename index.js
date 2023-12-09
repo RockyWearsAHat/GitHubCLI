@@ -558,8 +558,18 @@ if (userCanUseCLI) {
               "Would You Like To Delete This Branch Entirely (From Remotes And The Repository?)",
           });
           if (fullDeletion.deleteRemotes) {
-            await gitBranchDelete(selectedBranch);
-            await gitRemoteBranchDelete(selectedBranch);
+            let fullDeletionConfirmation = await inquirer.prompt({
+              type: "confirm",
+              name: "confirm",
+              message: "THIS WILL COMPLETLEY REMOVE THIS BRANCH, ARE YOU SURE?",
+            });
+
+            if (fullDeletionConfirmation.confirm) {
+              await gitBranchDelete(selectedBranch);
+              await gitRemoteBranchDelete(selectedBranch);
+            } else {
+              break;
+            }
           } else {
             await gitBranchDelete(selectedBranch);
           }
