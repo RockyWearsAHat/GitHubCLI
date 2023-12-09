@@ -493,6 +493,12 @@ if (userCanUseCLI) {
           message: "What Would You Like To Set As The Commit Message?",
           default: `New Branch ${newBranchInput.name}`,
         });
+        if (
+          newBranchPushMsg.msg.trim() == "" ||
+          newBranchPushMsg.msg.trim() == null
+        )
+          newBranchPushMsg.msg = `New Branch ${newBranchInput.name}`;
+
         await addLocalChanges();
         await commitLocalChanges(newBranchPushMsg.msg);
         const pushRes = await gitPush(String(newBranchInput.name));
