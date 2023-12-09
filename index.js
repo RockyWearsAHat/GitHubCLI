@@ -327,6 +327,9 @@ const getBranchList = async (topOfListBranch = "main") => {
       }
     }
 
+    returnArr = returnArr.filter(
+      (item) => item.trim() != null && item.trim() != ""
+    );
     returnArr.unshift(firstBranch);
     return returnArr;
   } else return false;
@@ -338,7 +341,12 @@ const getBranchAction = async (selectedBranch) => {
       type: "list",
       name: "action",
       message: `Select Action For ${selectedBranch}`,
-      choices: ["Push To Branch", "Pull From Branch", "<= BACK"],
+      choices: [
+        "Push To Branch",
+        "Pull From Branch",
+        "Delete Branch",
+        "<= BACK",
+      ],
     });
     return actionSelection.action;
   }
@@ -359,6 +367,18 @@ const getBranchInput = async () => {
 
 const createPushBranch = async (branchName) => {
   const res = await executeShellCommand(`git branch ${branchName}`);
+  return res;
+};
+
+const gitBranchDelete = async (branchName) => {
+  const res = await executeShellCommand(`git branch -d ${branchName}`);
+  return res;
+};
+
+const gitRemoteBranchDelete = async (branchName) => {
+  const res = await executeShellCommand(
+    `git push origin --delete ${branchName}`
+  );
   return res;
 };
 
@@ -528,6 +548,21 @@ if (userCanUseCLI) {
           console.log(res.stdout);
           break;
         case "Pull From Branch":
+          await gitPull(selectedBranch);
+          break;
+        case "Delete Branch":
+          let fullDeletion = await inquirer.prompt({
+            type: "confirm",
+            name: "deleteRemotes",
+            message:
+              "Would You Like To Delete This Branch Entirely (From Remotes And The Repository?)",
+          });
+          if (fullDeletion.deleteRemotes) {
+            await gitBranchDelete(selectedBranch);
+            await gitRemoteBranchDelete(selectedBranch);
+          } else {
+            await gitBranchDelete(selectedBranch);
+          }
           await gitPull(selectedBranch);
           break;
         default:
