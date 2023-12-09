@@ -542,8 +542,8 @@ if (userCanUseCLI) {
         ) {
           newBranchPushMsg.msg = `New Branch ${newBranchInput.name}`;
         }
-        const msg = String(newBranchPushMsg.msg);
-        const branchName = String(newBranchInput.name);
+        const msg = newBranchPushMsg.msg;
+        const branchName = newBranchInput.name;
         const committed = await commitLocalChanges(msg);
         if (!committed) break;
 
