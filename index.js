@@ -4,6 +4,8 @@ import { promisify } from "node:util";
 import inquirer from "inquirer";
 // import os from "os";
 
+//BUGS: Branch Not Properly Uploading, New Commit Not Getting Tacked On, It Is Just The Last Commit That Gets Pushed
+
 const exec = promisify(execCb);
 const executeShellCommand = async (command = "", verifyUserCommand = false) => {
   try {
