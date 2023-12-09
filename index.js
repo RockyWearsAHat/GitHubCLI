@@ -287,6 +287,12 @@ const gitPush = async (branch = "main") => {
   return res;
 };
 
+const gitPull = async (branch = "main") => {
+  const cmd = `git pull origin ${branch}`;
+  const res = await executeShellCommand(cmd);
+  return res;
+};
+
 const checkIfOrginLinked = async () => {
   const res = await executeShellCommand("git config --get remote.origin.url");
 
@@ -519,9 +525,10 @@ if (userCanUseCLI) {
           });
           await commitLocalChanges(commitMsg.msg);
           const res = await gitPush(selectedBranch);
-          console.log(res);
+          console.log(res.stdout);
           break;
         case "Pull From Branch":
+          await gitPull(selectedBranch);
           break;
         default:
           break;
