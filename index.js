@@ -287,6 +287,75 @@ const gitPush = async (branch = "main") => {
   return res;
 };
 
+const checkIfOrginLinked = async () => {
+  const res = await executeShellCommand("git config --get remote.origin.url");
+
+  if (res && res.stdout && res.stderr == "") return true;
+
+  console.log(res);
+  return false;
+};
+
+const getCurrentBranch = async () => {
+  const res = await executeShellCommand("git status");
+  if (res && res.stdout) return res.stdout.split(" ")[2].split("\n")[0];
+  else return false;
+};
+
+const getBranchList = async (topOfListBranch = "main") => {
+  const res = await executeShellCommand("git branch");
+  if (res && res.stdout) {
+    let arr = res.stdout.split(" ");
+    let returnArr = [];
+    let firstBranch = null;
+    for (let i = 0; i < arr.length; i++) {
+      let newItem = arr[i];
+      if (!(newItem.trim() == "")) {
+        newItem = arr[i].replaceAll("\n", "");
+        newItem = newItem.replaceAll("*", "");
+        if (newItem == topOfListBranch) {
+          firstBranch = newItem;
+        } else {
+          returnArr.push(newItem);
+        }
+      }
+    }
+
+    returnArr.unshift(firstBranch);
+    return returnArr;
+  } else return false;
+};
+
+const getBranchAction = async (selectedBranch) => {
+  if (selectedBranch != "[+ New]") {
+    const actionSelection = await inquirer.prompt({
+      type: "list",
+      name: "action",
+      message: `Select Action For ${selectedBranch}`,
+      choices: ["Push To Branch", "Pull From Branch", "<= BACK"],
+    });
+    return actionSelection.action;
+  }
+};
+
+const getBranchInput = async () => {
+  const currentBranch = await getCurrentBranch();
+  const branches = await getBranchList(currentBranch);
+  const branchSelection = await inquirer.prompt({
+    type: "list",
+    name: "branch",
+    message: `Select Branch To Checkout/Push To (Currently On Branch ${currentBranch})`,
+    choices: [...branches, "[+ New]"],
+  });
+
+  return branchSelection.branch;
+};
+
+const createPushBranch = async (branchName) => {
+  const res = await executeShellCommand(`git branch ${branchName}`);
+  return res;
+};
+
 /* ==================== */
 /* ACTUAL RUNTIME LOGIC */
 /* ==================== */
@@ -295,20 +364,20 @@ const userCanUseCLI = await verifyUserLogin();
 if (userCanUseCLI) {
   console.clear();
 
-  let startMenuChoices = [
-    "init (Create A New Repository)",
-    "pull (Clone An Existing Repository)",
-    "push (To Current Repository Or If No Repository Create New)",
-    "branch (Checkout An Existing Branch Or Create A New One)",
-  ];
+  let startMenuChoices = ["Init", "Clone"];
 
   if ((await checkIsRepository()) == true) {
     startMenuChoices = [
-      "pull (Clone An Existing Repository)",
-      "push (To Current Repository Or If No Repository Create New)",
-      "branch (Checkout An Existing Branch Or Create A New One)",
-      "delete/reinit (If Messed Up/Templates Changed)",
+      "Branch",
+      "Push",
+      "Pull",
+      "Re-Init / Delete",
+      "Repository Settings",
     ];
+  }
+
+  if ((await checkIfOrginLinked()) == true) {
+    startMenuChoices.push("Open In Browser");
   }
 
   const startMenuInput = await inquirer.prompt({
@@ -318,8 +387,8 @@ if (userCanUseCLI) {
     choices: startMenuChoices,
   });
 
-  switch (startMenuInput.action) {
-    case "init (Create A New Repository)":
+  switch (true) {
+    case startMenuInput.action.toLowerCase().indexOf("init") == 0:
       await gitInit();
       const baseInitChoice = await inquirer.prompt({
         type: "list",
@@ -362,7 +431,7 @@ if (userCanUseCLI) {
           break;
       }
       break;
-    case "delete/reinit (If Messed Up/Templates Changed)":
+    case startMenuInput.action.toLowerCase().indexOf("re-init") == 0:
       const reInitChoice = await inquirer.prompt({
         type: "list",
         name: "choice",
@@ -392,14 +461,63 @@ if (userCanUseCLI) {
           break;
       }
       break;
-    case "pull (Clone An Existing Repository)":
+    case startMenuInput.action.toLowerCase().indexOf("pull") == 0:
       console.log("pull!");
       break;
-    case "push (To Current Repository Or If No Repository Create New)":
+    case startMenuInput.action.toLowerCase().indexOf("push") == 0:
       console.log("push!");
       break;
-    case "branch (Checkout An Existing Branch Or Create A New One)":
-      console.log("branch!");
+    case startMenuInput.action.toLowerCase().indexOf("branch") == 0:
+      let validBranchActionFlag = false;
+      let selectedBranch;
+      let actionSelection;
+      while (!validBranchActionFlag) {
+        selectedBranch = await getBranchInput();
+        actionSelection = await getBranchAction(selectedBranch);
+
+        if (actionSelection != "<= BACK") {
+          validBranchActionFlag = true;
+        }
+      }
+
+      if (selectedBranch.toLowerCase() == "[+ new]") {
+        const newBranchInput = await inquirer.prompt({
+          type: "input",
+          name: "name",
+          message: "What Would You Like To Name This Branch?",
+        });
+        await createPushBranch(newBranchInput.name);
+        const newBranchPushMsg = await inquirer.prompt({
+          type: "input",
+          name: "msg",
+          message: "What Would You Like To Set As The Commit Message?",
+          default: `New Branch ${newBranchInput.name}`,
+        });
+        await addLocalChanges();
+        await commitLocalChanges(newBranchPushMsg.msg);
+        const pushRes = await gitPush(String(newBranchInput.name));
+
+        if (pushRes.stdout.indexOf("branch") == 0 && pushRes.stderr != "") {
+          console.log("Upload Complete!");
+          console.log(`${pushRes.stdout}`);
+        }
+      }
+
+      switch (actionSelection) {
+        case "Push To Branch":
+          break;
+        case "Pull From Branch":
+          break;
+        default:
+          break;
+      }
+      break;
+    case startMenuInput.action.toLowerCase().indexOf("repository settings") ==
+      0:
+      console.log("settings!");
+      break;
+    case startMenuInput.action.toLowerCase().indexOf("open in browser") == 0:
+      await executeShellCommand("gh browse");
       break;
     default:
       console.log("unhandled!!");
