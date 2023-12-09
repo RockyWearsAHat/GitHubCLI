@@ -55,22 +55,6 @@ const verifyUserCanUseGHCommands = async () => {
     res = await executeShellCommand("gh auth status");
   } catch (err) {
     return (stderr = "Install gh CLI before continuing!");
-
-    // let sysName = "";
-    // sysName = os.platform().toLowerCase();
-    // if (sysName.indexOf("win") != -1) {
-    //   sysName = "Windows OS";
-    // } else if (sysName.indexOf("mac") != -1) {
-    //   sysName = "MacOS";
-    // } else if (sysName.indexOf("x11") != -1) {
-    //   sysName = "UNIX OS";
-    // } else if (sysName.indexOf("linux") != -1) {
-    //   sysName = "Linux OS";
-    // } else {
-    //   sysName = "Mobile?";
-    // }
-
-    // console.log(sysName);
   }
 
   if (res && res.stdout && !res.stderr) {
@@ -530,10 +514,6 @@ if (userCanUseCLI) {
           name: "name",
           message: "What Would You Like To Name This Branch?",
         });
-        await createPushBranch(newBranchInput.name);
-
-        const added = await addLocalChanges();
-        if (!added) break;
         let newBranchPushMsg = await inquirer.prompt({
           type: "input",
           name: "msg",
@@ -547,16 +527,12 @@ if (userCanUseCLI) {
         ) {
           msg = newBranchPushMsg.msg = `New Branch ${newBranchInput.name}`;
         }
-        const branchName = newBranchInput.name;
-        const commitRes = await commitLocalChanges(msg);
-        console.log(commitRes);
-        if (!commitRes) break;
-
-        const pushRes = await gitPush(branchName);
-        if (pushRes.stdout.indexOf("branch") == 0 && pushRes.stderr != "") {
-          console.log("Upload Complete!");
-          console.log(`${pushRes.stdout}`);
-        }
+        const pushRes = await createPushBranch(newBranchInput.name);
+        console.log(pushRes.stdout);
+        await addLocalChanges();
+        await commitLocalChanges(msg);
+        const res = await gitPush(newBranchInput.name);
+        console.log(res.stdout);
 
         break;
       }
