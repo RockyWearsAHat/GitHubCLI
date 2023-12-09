@@ -528,7 +528,8 @@ if (userCanUseCLI) {
           message: "What Would You Like To Name This Branch?",
         });
         await createPushBranch(newBranchInput.name);
-        await addLocalChanges();
+        const added = await addLocalChanges();
+        if (!added) break;
         let newBranchPushMsg = await inquirer.prompt({
           type: "input",
           name: "msg",
@@ -542,14 +543,18 @@ if (userCanUseCLI) {
           newBranchPushMsg.msg = `New Branch ${newBranchInput.name}`;
         }
 
-        await commitLocalChanges(newBranchPushMsg.msg);
-        const pushRes = await gitPush(newBranchInput.name);
+        const committed = await commitLocalChanges(newBranchPushMsg.msg);
+        if (!committed) break;
 
+        const pushRes = await gitPush(newBranchInput.name);
         if (pushRes.stdout.indexOf("branch") == 0 && pushRes.stderr != "") {
           console.log("Upload Complete!");
           console.log(`${pushRes.stdout}`);
         }
+
+        break;
       }
+
       switch (actionSelection) {
         case "Push To Branch":
           await addLocalChanges();
