@@ -487,7 +487,7 @@ if (userCanUseCLI) {
           message: "What Would You Like To Name This Branch?",
         });
         await createPushBranch(newBranchInput.name);
-        const newBranchPushMsg = await inquirer.prompt({
+        let newBranchPushMsg = await inquirer.prompt({
           type: "input",
           name: "msg",
           message: "What Would You Like To Set As The Commit Message?",
@@ -508,9 +508,18 @@ if (userCanUseCLI) {
           console.log(`${pushRes.stdout}`);
         }
       }
-
       switch (actionSelection) {
         case "Push To Branch":
+          console.log(selectedBranch);
+          await addLocalChanges();
+          let commitMsg = await inquirer.prompt({
+            type: "input",
+            name: "msg",
+            message: "What Would You Like To Set As The Commit Message?",
+          });
+          await commitLocalChanges(commitMsg.msg);
+          const res = await gitPush(selectedBranch);
+          console.log(res);
           break;
         case "Pull From Branch":
           break;
