@@ -545,10 +545,10 @@ if (userCanUseCLI) {
           msg = newBranchPushMsg.msg = `New Branch ${newBranchInput.name}`;
         }
         const branchName = newBranchInput.name;
-        await commitLocalChanges(msg);
+        const commitRes = await commitLocalChanges(msg);
+        if (!commitRes) break;
 
         const pushRes = await gitPush(branchName);
-        console.log(pushRes);
         if (pushRes.stdout.indexOf("branch") == 0 && pushRes.stderr != "") {
           console.log("Upload Complete!");
           console.log(`${pushRes.stdout}`);
