@@ -239,7 +239,7 @@ const createRepo = async (repoName) => {
 };
 
 const addLocalChanges = async () => {
-  const addRes = await executeShellCommand("git add .");
+  const addRes = await executeShellCommand("git add --a");
   if (!addRes) return false;
   else return true;
 };
@@ -527,9 +527,14 @@ if (userCanUseCLI) {
           newBranchPushMsg.msg =
             newBranchPushMsg.msg = `New Branch ${newBranchInput.name}`;
         }
+        console.log(newBranchInput.name, newBranchPushMsg.msg);
         await createPushBranch(newBranchInput.name);
-        await addLocalChanges();
-        await commitLocalChanges(newBranchPushMsg.msg);
+        const localAdded = await addLocalChanges();
+        console.log(localAdded);
+        if (!localAdded) break;
+        const commitRes = await commitLocalChanges(newBranchPushMsg.msg);
+        console.log(commitRes);
+        if (!commitRes) break;
         const res = await gitPush(newBranchInput.name);
         console.log(res.stdout);
 
@@ -577,7 +582,7 @@ if (userCanUseCLI) {
           } else {
             await gitBranchDelete(selectedBranch);
           }
-          await gitPull(selectedBranch);
+          // await gitPull(selectedBranch);
           break;
         default:
           break;
