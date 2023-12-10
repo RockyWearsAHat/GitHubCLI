@@ -540,6 +540,7 @@ if (userCanUseCLI) {
 
         break;
       }
+      //Test comment
 
       switch (actionSelection) {
         case "Push To Branch":
