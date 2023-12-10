@@ -536,7 +536,8 @@ if (userCanUseCLI) {
         console.log(commitRes);
         if (!commitRes) break;
         const res = await gitPush(newBranchInput.name);
-        console.log(res.stdout);
+        const pushRes = await gitPush(newBranchInput.name);
+        console.log(pushRes.stdout);
 
         break;
       }
