@@ -584,7 +584,8 @@ if (userCanUseCLI) {
       handleReinit();
       break;
     case startMenuInput.action.toLowerCase().indexOf("pull") == 0:
-      console.log("pull!");
+      const currentBranch = getCurrentBranch();
+      gitPull(currentBranch);
       break;
     case startMenuInput.action.toLowerCase().indexOf("push") == 0:
       handlePush();
