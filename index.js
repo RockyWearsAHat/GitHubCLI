@@ -502,15 +502,9 @@ const handleBranchAction = async (actionSelection, selectedBranch) => {
     }
     console.log(newBranchInput.name, newBranchPushMsg.msg);
     await createPushBranch(newBranchInput.name);
-    const localAdded = await addLocalChanges();
-    console.log(localAdded);
-    if (!localAdded) return;
-    const commitRes = await commitLocalChanges(newBranchPushMsg.msg);
-    console.log(commitRes);
-    if (!commitRes) return;
-    const pushRes = await gitPush(newBranchInput.name);
-    console.log(pushRes.stdout);
-
+    await addLocalChanges();
+    await commitLocalChanges(newBranchPushMsg.msg);
+    await gitPush(newBranchInput.name);
     return;
   }
   //Test comment
