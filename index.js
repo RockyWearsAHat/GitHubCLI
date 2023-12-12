@@ -478,7 +478,7 @@ const handlePush = async (branch = "") => {
   const res = await gitPush(currentBranch);
   console.log(res.stdout.trim());
 };
-//this is a test commit, will it work pushing this to main?
+//can this be pushed to main now?
 const showBranchMenu = async () => {
   let validBranchActionFlag = false;
   let selectedBranch;
