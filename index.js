@@ -522,6 +522,7 @@ const handleBranchAction = async (actionSelection, selectedBranch) => {
     await gitPush(newBranchInput.name);
     return;
   }
+  //This is a test commit to the test123 branch
 
   switch (actionSelection) {
     case "Push To Branch":
