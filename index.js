@@ -459,6 +459,7 @@ const handlePush = async (branch = "") => {
     message: "What Would You Like To Set As The Commit Message?",
   });
   await commitLocalChanges(commitMsg.msg);
+  await gitBranch(branch);
   const res = await gitPush(currentBranch);
   console.log(res.stdout.trim());
 };
