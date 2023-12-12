@@ -17,11 +17,8 @@ const executeShellCommand = async (command = "", verifyUserCommand = false) => {
     return res;
   } catch (e) {
     if (!verifyUserCommand) {
-      // console.error(e);
       return null;
     }
-    //Readd test comment
-
     /*IF THIS COMMAND IS A VERIFY COMMAND, ERROR WILL BE THROWN BUT IS EXPECTED */
     let res;
     try {
@@ -507,7 +504,6 @@ const handleBranchAction = async (actionSelection, selectedBranch) => {
     await gitPush(newBranchInput.name);
     return;
   }
-  //Test comment
 
   switch (actionSelection) {
     case "Push To Branch":
@@ -608,6 +604,3 @@ if (userCanUseCLI) {
       break;
   }
 }
-//This is a new commit, changes for a specific branch
-
-//This is a new commit, will this push to a new branch correctly?
