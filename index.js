@@ -478,7 +478,7 @@ const handlePush = async (branch = "") => {
   const res = await gitPush(currentBranch);
   console.log(res.stdout.trim());
 };
-//can this be pushed to main now?
+
 const showBranchMenu = async () => {
   let validBranchActionFlag = false;
   let selectedBranch;
