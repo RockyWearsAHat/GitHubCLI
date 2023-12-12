@@ -247,6 +247,21 @@ const commitLocalChanges = async (msg = "auto") => {
   else return true;
 };
 
+const stashLocal = async () => {
+  return await executeShellCommand("git stash");
+};
+
+const unStashLocal = async () => {
+  return await executeShellCommand("git stash pop");
+};
+
+const moveToBranch = async (branch) => {
+  await stashLocal();
+  await gitCheckout(branch);
+  await unStashLocal();
+  return true;
+};
+
 const addRemoteOrigin = async (origin = "") => {
   if (origin == "") return false;
   const res = await executeShellCommand(
@@ -448,7 +463,10 @@ const handleReinit = async () => {
 
 const handlePush = async (branch = "") => {
   let currentBranch = await getCurrentBranch();
-  if (branch != "") currentBranch = branch;
+  if (branch != "") {
+    await moveToBranch(branch);
+    currentBranch = branch;
+  }
   await addLocalChanges();
   let commitMsg = await inquirer.prompt({
     type: "input",
@@ -456,7 +474,7 @@ const handlePush = async (branch = "") => {
     message: "What Would You Like To Set As The Commit Message?",
   });
   await commitLocalChanges(commitMsg.msg);
-  await gitBranch(branch);
+  await gitBranch(currentBranch);
   const res = await gitPush(currentBranch);
   console.log(res.stdout.trim());
 };
