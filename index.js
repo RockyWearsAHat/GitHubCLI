@@ -464,7 +464,6 @@ const handleReinit = async () => {
 const handlePush = async (branch = "") => {
   let currentBranch = await getCurrentBranch();
   if (branch != "") {
-    await moveToBranch(branch);
     currentBranch = branch;
   }
   await addLocalChanges();
@@ -517,6 +516,7 @@ const handleBranchAction = async (actionSelection, selectedBranch) => {
     }
     console.log(newBranchInput.name, newBranchPushMsg.msg);
     await createPushBranch(newBranchInput.name);
+    await moveToBranch(newBranchInput.name);
     await addLocalChanges();
     await commitLocalChanges(newBranchPushMsg.msg);
     await gitPush(newBranchInput.name);
