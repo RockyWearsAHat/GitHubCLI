@@ -239,7 +239,7 @@ const createRepo = async (repoName) => {
 };
 
 const addLocalChanges = async () => {
-  const addRes = await executeShellCommand("git add --a");
+  const addRes = await executeShellCommand("git add .");
   if (!addRes) return false;
   else return true;
 };
