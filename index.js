@@ -591,7 +591,101 @@ if (userCanUseCLI) {
       handlePush();
       break;
     case startMenuInput.action.toLowerCase().indexOf("branch") == 0:
+<<<<<<< Updated upstream
       showBranchMenu();
+=======
+      let validBranchActionFlag = false;
+      let selectedBranch;
+      let actionSelection;
+      while (!validBranchActionFlag) {
+        selectedBranch = await getBranchInput();
+        actionSelection = await getBranchAction(selectedBranch);
+
+        if (actionSelection != "<= BACK") {
+          validBranchActionFlag = true;
+        }
+      }
+
+      if (selectedBranch.toLowerCase() == "[+ new]") {
+        const newBranchInput = await inquirer.prompt({
+          type: "input",
+          name: "name",
+          message: "What Would You Like To Name This Branch?",
+        });
+        let newBranchPushMsg = await inquirer.prompt({
+          type: "input",
+          name: "msg",
+          message: "What Would You Like To Set As The Commit Message?",
+          default: `New Branch ${newBranchInput.name}`,
+        });
+        if (
+          newBranchPushMsg.msg.trim() == "" ||
+          newBranchPushMsg.msg.trim() == null
+        ) {
+          newBranchPushMsg.msg =
+            newBranchPushMsg.msg = `New Branch ${newBranchInput.name}`;
+        }
+        console.log(newBranchInput.name, newBranchPushMsg.msg);
+        await createPushBranch(newBranchInput.name);
+        const localAdded = await addLocalChanges();
+        console.log(localAdded);
+        if (!localAdded) break;
+        const commitRes = await commitLocalChanges(newBranchPushMsg.msg);
+        console.log(commitRes);
+        if (!commitRes) break;
+        const res = await gitPush(newBranchInput.name);
+        console.log(res.stdout);
+
+        break;
+      }
+
+      switch (actionSelection) {
+        case "Push To Branch":
+          await addLocalChanges();
+          let commitMsg = await inquirer.prompt({
+            type: "input",
+            name: "msg",
+            message: "What Would You Like To Set As The Commit Message?",
+          });
+          await commitLocalChanges(commitMsg.msg);
+          const res = await gitPush(selectedBranch);
+          console.log(res.stdout);
+          break;
+        case "Pull Latest In Repo":
+          await gitPull(selectedBranch);
+          break;
+        case "Checkout":
+          await gitCheckout(selectedBranch);
+          break;
+        case "Delete Branch":
+          let fullDeletion = await inquirer.prompt({
+            type: "confirm",
+            name: "deleteRemotes",
+            message:
+              "Would You Like To Delete This Branch Entirely (From Remotes And The Repository?)",
+          });
+          if (fullDeletion.deleteRemotes) {
+            let fullDeletionConfirmation = await inquirer.prompt({
+              type: "confirm",
+              name: "confirm",
+              message: "THIS WILL COMPLETLEY REMOVE THIS BRANCH, ARE YOU SURE?",
+            });
+
+            if (fullDeletionConfirmation.confirm) {
+              await gitBranchDelete(selectedBranch);
+              await gitRemoteBranchDelete(selectedBranch);
+            } else {
+              break;
+            }
+          } else {
+            await gitBranchDelete(selectedBranch);
+          }
+          // await gitPull(selectedBranch);
+          break;
+        default:
+          break;
+      }
+>>>>>>> Stashed changes
       break;
     case startMenuInput.action.toLowerCase().indexOf("repository settings") ==
       0:
