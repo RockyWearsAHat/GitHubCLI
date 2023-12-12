@@ -523,6 +523,7 @@ const handleBranchAction = async (actionSelection, selectedBranch) => {
     return;
   }
   //This is a test commit to the test123 branch
+  //Once again this is a test, will this go to main or the branch?
 
   switch (actionSelection) {
     case "Push To Branch":
