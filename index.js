@@ -525,6 +525,7 @@ const handleBranchAction = async (actionSelection, selectedBranch) => {
 
   switch (actionSelection) {
     case "Push To Branch":
+      await moveToBranch(selectedBranch);
       await handlePush();
       break;
     case "Pull Latest In Repo":
