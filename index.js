@@ -269,8 +269,7 @@ const gitBranch = async (branchName = "main", main = false) => {
 };
 
 const gitPush = async (branch = "main") => {
-  const cmd = `git push -u origin ${branch}`;
-  const res = await executeShellCommand(cmd);
+  const res = await executeShellCommand(`git push -u origin ${branch}`);
   return res;
 };
 
@@ -375,6 +374,186 @@ const gitCheckout = async (branchName) => {
   return res;
 };
 
+const handleFirstInit = async () => {
+  await gitInit();
+  const baseInitChoice = await inquirer.prompt({
+    type: "list",
+    name: "choice",
+    message: "What Would You Like To Do With This Repository?",
+    choices: [
+      "Create New Repository And Upload",
+      "Link To Existing Repository URL",
+    ],
+  });
+
+  switch (baseInitChoice.choice) {
+    case "Create New Repository And Upload":
+      const newRepoName = await getNewRepoName();
+      if (!newRepoName) break;
+      const repoCreationRes = await createRepo(newRepoName);
+      if (!repoCreationRes) break;
+      const remoteOriginRes = await addRemoteOrigin(repoCreationRes);
+      if (!remoteOriginRes) break;
+      const branchRes = await gitBranch("main", true);
+      if (!branchRes) break;
+      const addRes = await addLocalChanges();
+      if (!addRes) break;
+      const commitMsg = await inquirer.prompt({
+        type: "input",
+        name: "input",
+        message: "What Would You Like To Set As The Commit Message?",
+      });
+      const commitRes = await commitLocalChanges(commitMsg.input);
+      if (!commitRes) break;
+
+      const pushRes = await gitPush("main");
+      if (pushRes.stdout.indexOf("branch") == 0 && pushRes.stderr != "") {
+        console.log("Upload Complete!");
+        console.log(`${repoCreationRes.trim()}, ${pushRes.stdout}`);
+      }
+      // const pushRes = await pushCommitted();
+      break;
+    case "Link To Existing Repository URL":
+      break;
+  }
+};
+
+const handleReinit = async () => {
+  const reInitChoice = await inquirer.prompt({
+    type: "list",
+    name: "choice",
+    message: "What Would You Like To Do With This Repository?",
+    choices: [
+      "Reinitialize",
+      "Remove .git (Will FULLY DELETE .git Folder From Workspace)",
+    ],
+  });
+
+  switch (reInitChoice.choice) {
+    case "Reinitialize":
+      await gitInit();
+      break;
+    case "Remove .git (Will FULLY DELETE .git Folder From Workspace)":
+      const removeGitRes = await gitForceDeInit();
+      if (removeGitRes && removeGitRes.stderr == "") {
+        console.log(
+          "Successfully Removed .git Folder From Workspace, If You Don't See This Change Reflected, Please Hit CTRL/CMD + SHIFT + P Then Search 'Reload Window'"
+        );
+      } else {
+        console.log(
+          `Error, ${removeGitRes.stderr}, Please Try Running rm -rf .git In The Current Directory To Manually Attempt This Step`
+        );
+      }
+
+      break;
+  }
+};
+
+const handlePush = async (branch = "") => {
+  let currentBranch = await getCurrentBranch();
+  if (branch != "") currentBranch = branch;
+  await addLocalChanges();
+  let commitMsg = await inquirer.prompt({
+    type: "input",
+    name: "msg",
+    message: "What Would You Like To Set As The Commit Message?",
+  });
+  await commitLocalChanges(commitMsg.msg);
+  const res = await gitPush(currentBranch);
+  console.log(res.stdout.trim());
+};
+
+const showBranchMenu = async () => {
+  let validBranchActionFlag = false;
+  let selectedBranch;
+  let actionSelection;
+  while (!validBranchActionFlag) {
+    selectedBranch = await getBranchInput();
+    actionSelection = await getBranchAction(selectedBranch);
+
+    if (actionSelection != "<= BACK") {
+      validBranchActionFlag = true;
+    }
+  }
+
+  handleBranchAction(actionSelection, selectedBranch);
+};
+
+const handleBranchAction = async (actionSelection, selectedBranch) => {
+  if (selectedBranch.toLowerCase() == "[+ new]") {
+    const newBranchInput = await inquirer.prompt({
+      type: "input",
+      name: "name",
+      message: "What Would You Like To Name This Branch?",
+    });
+    let newBranchPushMsg = await inquirer.prompt({
+      type: "input",
+      name: "msg",
+      message: "What Would You Like To Set As The Commit Message?",
+      default: `New Branch ${newBranchInput.name}`,
+    });
+    if (
+      newBranchPushMsg.msg.trim() == "" ||
+      newBranchPushMsg.msg.trim() == null
+    ) {
+      newBranchPushMsg.msg =
+        newBranchPushMsg.msg = `New Branch ${newBranchInput.name}`;
+    }
+    console.log(newBranchInput.name, newBranchPushMsg.msg);
+    await createPushBranch(newBranchInput.name);
+    const localAdded = await addLocalChanges();
+    console.log(localAdded);
+    if (!localAdded) return;
+    const commitRes = await commitLocalChanges(newBranchPushMsg.msg);
+    console.log(commitRes);
+    if (!commitRes) return;
+    const pushRes = await gitPush(newBranchInput.name);
+    console.log(pushRes.stdout);
+
+    return;
+  }
+  //Test comment
+
+  switch (actionSelection) {
+    case "Push To Branch":
+      await handlePush();
+      break;
+    case "Pull Latest In Repo":
+      await gitPull(selectedBranch);
+      break;
+    case "Checkout":
+      await gitCheckout(selectedBranch);
+      break;
+    case "Delete Branch":
+      let fullDeletion = await inquirer.prompt({
+        type: "confirm",
+        name: "deleteRemotes",
+        message:
+          "Would You Like To Delete This Branch Entirely (From Remotes And The Repository?)",
+      });
+      if (fullDeletion.deleteRemotes) {
+        let fullDeletionConfirmation = await inquirer.prompt({
+          type: "confirm",
+          name: "confirm",
+          message: "THIS WILL COMPLETLEY REMOVE THIS BRANCH, ARE YOU SURE?",
+        });
+
+        if (fullDeletionConfirmation.confirm) {
+          await gitBranchDelete(selectedBranch);
+          await gitRemoteBranchDelete(selectedBranch);
+        } else {
+          break;
+        }
+      } else {
+        await gitBranchDelete(selectedBranch);
+      }
+      // await gitPull(selectedBranch);
+      break;
+    default:
+      break;
+  }
+};
+
 /* ==================== */
 /* ACTUAL RUNTIME LOGIC */
 /* ==================== */
@@ -408,186 +587,19 @@ if (userCanUseCLI) {
 
   switch (true) {
     case startMenuInput.action.toLowerCase().indexOf("init") == 0:
-      await gitInit();
-      const baseInitChoice = await inquirer.prompt({
-        type: "list",
-        name: "choice",
-        message: "What Would You Like To Do With This Repository?",
-        choices: [
-          "Create New Repository And Upload",
-          "Link To Existing Repository URL",
-        ],
-      });
-
-      switch (baseInitChoice.choice) {
-        case "Create New Repository And Upload":
-          const newRepoName = await getNewRepoName();
-          if (!newRepoName) break;
-          const repoCreationRes = await createRepo(newRepoName);
-          if (!repoCreationRes) break;
-          const remoteOriginRes = await addRemoteOrigin(repoCreationRes);
-          if (!remoteOriginRes) break;
-          const branchRes = await gitBranch("main", true);
-          if (!branchRes) break;
-          const addRes = await addLocalChanges();
-          if (!addRes) break;
-          const commitMsg = await inquirer.prompt({
-            type: "input",
-            name: "input",
-            message: "What Would You Like To Set As The Commit Message?",
-          });
-          const commitRes = await commitLocalChanges(commitMsg.input);
-          if (!commitRes) break;
-
-          const pushRes = await gitPush("main");
-          if (pushRes.stdout.indexOf("branch") == 0 && pushRes.stderr != "") {
-            console.log("Upload Complete!");
-            console.log(`${repoCreationRes.trim()}, ${pushRes.stdout}`);
-          }
-          // const pushRes = await pushCommitted();
-          break;
-        case "Link To Existing Repository URL":
-          break;
-      }
+      handleFirstInit();
       break;
     case startMenuInput.action.toLowerCase().indexOf("re-init") == 0:
-      const reInitChoice = await inquirer.prompt({
-        type: "list",
-        name: "choice",
-        message: "What Would You Like To Do With This Repository?",
-        choices: [
-          "Reinitialize",
-          "Remove .git (Will FULLY DELETE .git Folder From Workspace)",
-        ],
-      });
-
-      switch (reInitChoice.choice) {
-        case "Reinitialize":
-          await gitInit();
-          break;
-        case "Remove .git (Will FULLY DELETE .git Folder From Workspace)":
-          const removeGitRes = await gitForceDeInit();
-          if (removeGitRes && removeGitRes.stderr == "") {
-            console.log(
-              "Successfully Removed .git Folder From Workspace, If You Don't See This Change Reflected, Please Hit CTRL/CMD + SHIFT + P Then Search 'Reload Window'"
-            );
-          } else {
-            console.log(
-              `Error, ${removeGitRes.stderr}, Please Try Running rm -rf .git In The Current Directory To Manually Attempt This Step`
-            );
-          }
-
-          break;
-      }
+      handleReinit();
       break;
     case startMenuInput.action.toLowerCase().indexOf("pull") == 0:
       console.log("pull!");
       break;
     case startMenuInput.action.toLowerCase().indexOf("push") == 0:
-      const currentBranch = await getCurrentBranch();
-      await addLocalChanges();
-      let commitMsg = await inquirer.prompt({
-        type: "input",
-        name: "msg",
-        message: "What Would You Like To Set As The Commit Message?",
-      });
-      await commitLocalChanges(commitMsg.msg);
-      const res = await gitPush(currentBranch);
-      console.log(res.stdout);
+      handlePush();
       break;
     case startMenuInput.action.toLowerCase().indexOf("branch") == 0:
-      let validBranchActionFlag = false;
-      let selectedBranch;
-      let actionSelection;
-      while (!validBranchActionFlag) {
-        selectedBranch = await getBranchInput();
-        actionSelection = await getBranchAction(selectedBranch);
-
-        if (actionSelection != "<= BACK") {
-          validBranchActionFlag = true;
-        }
-      }
-
-      if (selectedBranch.toLowerCase() == "[+ new]") {
-        const newBranchInput = await inquirer.prompt({
-          type: "input",
-          name: "name",
-          message: "What Would You Like To Name This Branch?",
-        });
-        let newBranchPushMsg = await inquirer.prompt({
-          type: "input",
-          name: "msg",
-          message: "What Would You Like To Set As The Commit Message?",
-          default: `New Branch ${newBranchInput.name}`,
-        });
-        if (
-          newBranchPushMsg.msg.trim() == "" ||
-          newBranchPushMsg.msg.trim() == null
-        ) {
-          newBranchPushMsg.msg =
-            newBranchPushMsg.msg = `New Branch ${newBranchInput.name}`;
-        }
-        console.log(newBranchInput.name, newBranchPushMsg.msg);
-        await createPushBranch(newBranchInput.name);
-        const localAdded = await addLocalChanges();
-        console.log(localAdded);
-        if (!localAdded) break;
-        const commitRes = await commitLocalChanges(newBranchPushMsg.msg);
-        console.log(commitRes);
-        if (!commitRes) break;
-        const pushRes = await gitPush(newBranchInput.name);
-        console.log(pushRes.stdout);
-
-        break;
-      }
-      //Test comment
-
-      switch (actionSelection) {
-        case "Push To Branch":
-          await addLocalChanges();
-          let commitMsg = await inquirer.prompt({
-            type: "input",
-            name: "msg",
-            message: "What Would You Like To Set As The Commit Message?",
-          });
-          await commitLocalChanges(commitMsg.msg);
-          const res = await gitPush(selectedBranch);
-          console.log(res.stdout);
-          break;
-        case "Pull Latest In Repo":
-          await gitPull(selectedBranch);
-          break;
-        case "Checkout":
-          await gitCheckout(selectedBranch);
-          break;
-        case "Delete Branch":
-          let fullDeletion = await inquirer.prompt({
-            type: "confirm",
-            name: "deleteRemotes",
-            message:
-              "Would You Like To Delete This Branch Entirely (From Remotes And The Repository?)",
-          });
-          if (fullDeletion.deleteRemotes) {
-            let fullDeletionConfirmation = await inquirer.prompt({
-              type: "confirm",
-              name: "confirm",
-              message: "THIS WILL COMPLETLEY REMOVE THIS BRANCH, ARE YOU SURE?",
-            });
-
-            if (fullDeletionConfirmation.confirm) {
-              await gitBranchDelete(selectedBranch);
-              await gitRemoteBranchDelete(selectedBranch);
-            } else {
-              break;
-            }
-          } else {
-            await gitBranchDelete(selectedBranch);
-          }
-          // await gitPull(selectedBranch);
-          break;
-        default:
-          break;
-      }
+      showBranchMenu();
       break;
     case startMenuInput.action.toLowerCase().indexOf("repository settings") ==
       0:
